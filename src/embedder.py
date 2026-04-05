@@ -2,9 +2,10 @@
 
 import logging
 import os
-import sys
 
 import ollama  # Local LLM runner — provides embedding models without cloud APIs
+
+from src.errors import MissingAPIKeyError, OllamaConnectionError
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +27,7 @@ def embed_texts(
         A list of embedding vectors, one per input text.
 
     Raises:
-        SystemExit: If Ollama is not running or unreachable.
+        OllamaConnectionError: If Ollama is not running or unreachable.
 
     Example:
         vectors = embed_texts(["Hello world", "Goodbye world"])
@@ -36,12 +37,8 @@ def embed_texts(
         response = ollama.embed(model=model, input=texts)
         return response["embeddings"]
     except Exception as e:
-        if "connect" in str(e).lower() or "connection" in str(e).lower():
-            logger.error(
-                "Could not connect to Ollama. Is it running? "
-                "Start it with: ollama serve"
-            )
-            sys.exit(1)
+        if _is_connection_error(e):
+            raise OllamaConnectionError() from e
         raise
 
 
@@ -87,18 +84,23 @@ def embed_texts_openai(
         A list of embedding vectors, one per input text.
 
     Raises:
-        SystemExit: If OPENAI_API_KEY is not set.
+        MissingAPIKeyError: If OPENAI_API_KEY is not set.
 
     Example:
         vectors = embed_texts_openai(["Hello world"])
     """
     api_key = os.environ.get("OPENAI_API_KEY")
     if not api_key:
-        logger.error("OPENAI_API_KEY not set. Export it or use Ollama instead.")
-        sys.exit(1)
+        raise MissingAPIKeyError("OPENAI_API_KEY")
 
     from openai import OpenAI  # Cloud LLM API — only imported when explicitly chosen
 
     client = OpenAI(api_key=api_key)
     response = client.embeddings.create(model=model, input=texts)
     return [item.embedding for item in response.data]
+
+
+def _is_connection_error(exc: Exception) -> bool:
+    """Check if an exception is caused by Ollama being unreachable."""
+    error_text = str(exc).lower()
+    return any(term in error_text for term in ("connect", "connection", "refused"))

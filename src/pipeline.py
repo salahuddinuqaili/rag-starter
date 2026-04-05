@@ -5,6 +5,7 @@ import time
 
 from src.chunker import chunk_documents
 from src.embedder import embed_query, embed_texts
+from src.errors import IndexNotFoundError
 from src.generator import generate_answer
 from src.loader import load_folder
 from src.store import add_documents, create_store, query_store, store_exists
@@ -86,6 +87,9 @@ def query_documents(
     top_k: int = 5,
     model: str = "llama3.1:8b",
     verbose: bool = False,
+    prompt_template: str | None = None,
+    where: dict | None = None,
+    max_distance: float | None = None,
 ) -> dict:
     """Retrieve relevant chunks and generate an answer to a question.
 
@@ -98,10 +102,18 @@ def query_documents(
         top_k: How many chunks to retrieve (default 5).
         model: The Ollama model to use for generating the answer.
         verbose: When True, print retrieval results before generation.
+        prompt_template: Custom prompt with {context} and {question} placeholders.
+            Uses the default RAG template if not provided.
+        where: Optional metadata filter, e.g. {"source": "report.pdf"}.
+        max_distance: Optional relevance threshold. Results with distance above
+            this value are filtered out. Try 0.4 for strict relevance.
 
     Returns:
         A dict with 'answer' (str) and 'sources' (list of dicts with
         content, metadata, and distance).
+
+    Raises:
+        IndexNotFoundError: If no index exists at db_path.
 
     Example:
         result = query_documents("What is machine learning?")
@@ -109,10 +121,7 @@ def query_documents(
         # result["sources"][0]["metadata"]["source"] == "intro-to-ml.md"
     """
     if not store_exists(db_path):
-        return {
-            "answer": "No index found. Run index_documents() or index_folder.py first.",
-            "sources": [],
-        }
+        raise IndexNotFoundError(db_path)
 
     total_start = time.time()
 
@@ -125,16 +134,27 @@ def query_documents(
     # Stage 2: Retrieve similar chunks
     stage_start = time.time()
     _client, collection = create_store(path=db_path)
-    results = query_store(collection, query_embedding, top_k=top_k)
+    results = query_store(
+        collection, query_embedding, top_k=top_k, where=where, max_distance=max_distance
+    )
     if verbose:
         print(f"[store] Retrieved {len(results)} chunks in {time.time() - stage_start:.1f}s")
         for i, r in enumerate(results):
             print(f"  [{i+1}] {r['metadata'].get('source', '?')} (distance: {r['distance']:.4f})")
 
+    if not results:
+        return {
+            "answer": "No relevant documents found for your question. "
+            "Try rephrasing or indexing more documents.",
+            "sources": [],
+        }
+
     # Stage 3: Generate answer
     stage_start = time.time()
     context_chunks = [r["content"] for r in results]
-    answer = generate_answer(question, context_chunks, model=model)
+    answer = generate_answer(
+        question, context_chunks, model=model, prompt_template=prompt_template
+    )
     if verbose:
         print(f"[generator] Generated answer in {time.time() - stage_start:.1f}s")
         print(f"[pipeline] Total query time: {time.time() - total_start:.1f}s")

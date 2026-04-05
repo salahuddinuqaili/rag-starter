@@ -8,6 +8,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import streamlit as st  # Web UI framework — builds interactive apps from Python scripts
 
+from src.errors import RagStarterError
 from src.pipeline import index_documents, query_documents
 from src.store import store_exists
 
@@ -60,16 +61,19 @@ with st.sidebar:
         if not os.path.isdir(folder_path):
             st.error(f"Folder not found: {folder_path}")
         else:
-            with st.spinner("Indexing documents..."):
-                stats = index_documents(
-                    folder_path=folder_path,
-                    db_path=db_path,
-                    chunk_size=chunk_size,
+            try:
+                with st.spinner("Indexing documents..."):
+                    stats = index_documents(
+                        folder_path=folder_path,
+                        db_path=db_path,
+                        chunk_size=chunk_size,
+                    )
+                st.success(
+                    f"Indexed {stats['files_loaded']} files → "
+                    f"{stats['chunks_created']} chunks in {stats['time_seconds']:.1f}s"
                 )
-            st.success(
-                f"Indexed {stats['files_loaded']} files → "
-                f"{stats['chunks_created']} chunks in {stats['time_seconds']:.1f}s"
-            )
+            except RagStarterError as e:
+                st.error(str(e))
 
     if store_exists(db_path):
         st.info("Index ready — ask questions below!")
@@ -90,7 +94,8 @@ for message in st.session_state.messages:
                     name = source["metadata"].get("source", "unknown")
                     distance = source["distance"]
                     st.markdown(f"**{name}** (relevance: {1 - distance:.2f})")
-                    st.text(source["content"][:300] + "..." if len(source["content"]) > 300 else source["content"])
+                    content = source["content"]
+                    st.text(content[:300] + "..." if len(content) > 300 else content)
                     st.divider()
 
 # Chat input
@@ -107,28 +112,36 @@ if question := st.chat_input("Ask a question about your documents"):
             st.markdown(response)
     else:
         with st.chat_message("assistant"):
-            with st.spinner("Searching and generating answer..."):
-                result = query_documents(
-                    question=question,
-                    db_path=db_path,
-                    top_k=top_k,
-                    model=model,
-                )
+            try:
+                with st.spinner("Searching and generating answer..."):
+                    result = query_documents(
+                        question=question,
+                        db_path=db_path,
+                        top_k=top_k,
+                        model=model,
+                    )
 
-            st.markdown(result["answer"])
+                st.markdown(result["answer"])
 
-            if result["sources"]:
-                with st.expander("View sources"):
-                    for source in result["sources"]:
-                        name = source["metadata"].get("source", "unknown")
-                        distance = source["distance"]
-                        st.markdown(f"**{name}** (relevance: {1 - distance:.2f})")
-                        content = source["content"]
-                        st.text(content[:300] + "..." if len(content) > 300 else content)
-                        st.divider()
+                if result["sources"]:
+                    with st.expander("View sources"):
+                        for source in result["sources"]:
+                            name = source["metadata"].get("source", "unknown")
+                            distance = source["distance"]
+                            st.markdown(f"**{name}** (relevance: {1 - distance:.2f})")
+                            content = source["content"]
+                            st.text(content[:300] + "..." if len(content) > 300 else content)
+                            st.divider()
 
-            st.session_state.messages.append({
-                "role": "assistant",
-                "content": result["answer"],
-                "sources": result["sources"],
-            })
+                st.session_state.messages.append({
+                    "role": "assistant",
+                    "content": result["answer"],
+                    "sources": result["sources"],
+                })
+            except RagStarterError as e:
+                error_msg = f"Error: {e}"
+                st.error(error_msg)
+                st.session_state.messages.append({
+                    "role": "assistant",
+                    "content": error_msg,
+                })

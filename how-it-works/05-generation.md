@@ -1,5 +1,7 @@
 # Generating Answers
 
+[← Back to overview](README.md)
+
 The generation step sends your question and the retrieved chunks to a large
 language model (LLM), which reads the context and produces a grounded answer
 based on your actual documents.
@@ -125,3 +127,10 @@ To use it on your own documents:
 python bring-your-own-docs/index_folder.py ~/my-docs --verbose
 python bring-your-own-docs/query.py "your question here" --verbose
 ```
+
+## What's Next?
+
+- [Improve Your Results](../guides/improve-results.md) — tune chunk size, prompts, and retrieval
+- [Glossary](../reference/glossary.md) — definitions for all technical terms
+- [Troubleshooting](../reference/troubleshooting.md) — fix common issues
+- [Use Your Own Documents](../bring-your-own-docs/README.md) — try it on your files

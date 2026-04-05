@@ -1,5 +1,7 @@
 # Chunking Text
 
+[← Back to overview](README.md)
+
 The chunking step splits your documents into small, overlapping pieces so the
 pipeline can retrieve the specific paragraphs that answer your question, rather
 than returning entire files.

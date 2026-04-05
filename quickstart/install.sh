@@ -43,8 +43,10 @@ echo "✓ Python packages installed"
 if ! command -v ollama &> /dev/null; then
     echo ""
     echo "✗ Ollama not found."
+    echo ""
+    echo "  Ollama runs AI models locally on your machine."
     echo "  Install it from: https://ollama.ai"
-    echo "  Then re-run this script."
+    echo "  After installing, restart your terminal and re-run this script."
     exit 1
 fi
 echo "✓ Ollama found"
@@ -64,7 +66,12 @@ echo "Running health check..."
 python quickstart/check.py
 
 echo ""
-echo "Setup complete! Try:"
-echo "  source .venv/bin/activate"
+echo "Setup complete!"
+echo ""
+echo "Run the demo now:"
 echo "  python quickstart/my_first_rag.py"
+echo ""
+echo "IMPORTANT: If you close this terminal, reactivate the"
+echo "virtual environment first:"
+echo "  source .venv/bin/activate"
 echo ""

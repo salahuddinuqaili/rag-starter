@@ -78,9 +78,14 @@ def main() -> None:
             print()
 
         print("=" * 60)
-        print("  Done! Now try it on YOUR documents:")
-        print("  python bring-your-own-docs/index_folder.py /path/to/your/folder")
+        print("  It worked! Your first RAG pipeline is running.")
+        print()
+        print("  Next — try it on YOUR documents:")
+        print("  python bring-your-own-docs/index_folder.py ./my-docs --verbose")
         print("  python bring-your-own-docs/query.py \"your question here\"")
+        print()
+        print("  Or launch the web UI:")
+        print("  streamlit run bring-your-own-docs/app.py")
         print("=" * 60)
 
     finally:

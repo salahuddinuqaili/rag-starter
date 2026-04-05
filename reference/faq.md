@@ -80,3 +80,10 @@ requests, and set up a development environment. Good first issues are labelled
 `good first issue` on GitHub. Adding DOCX support, writing a new sample
 document, or improving an explainer in `how-it-works/` are all great places
 to start.
+
+## More Resources
+
+- [Glossary](glossary.md) — definitions for every technical term
+- [Troubleshooting](troubleshooting.md) — fix specific errors
+- [How RAG Works](../how-it-works/README.md) — the full pipeline explained
+- [Improve Your Results](../guides/improve-results.md) — 5 tuning knobs with experiments

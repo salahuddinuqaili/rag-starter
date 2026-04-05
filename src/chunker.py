@@ -25,17 +25,29 @@ def chunk_text(
 
     Args:
         text: The text to split.
-        chunk_size: Maximum number of characters per chunk.
+        chunk_size: Maximum number of characters per chunk. Must be > 0.
         chunk_overlap: Number of characters to repeat between consecutive
-            chunks so context isn't lost at boundaries.
+            chunks so context isn't lost at boundaries. Must be < chunk_size.
 
     Returns:
         A list of text chunks. Empty list for empty input, single-element
         list if the text is shorter than chunk_size.
 
+    Raises:
+        ValueError: If chunk_overlap >= chunk_size or either is <= 0.
+
     Example:
         chunks = chunk_text("Hello world. This is a test.", chunk_size=15, chunk_overlap=5)
     """
+    if chunk_size <= 0:
+        raise ValueError(f"chunk_size must be > 0, got {chunk_size}")
+    if chunk_overlap < 0:
+        raise ValueError(f"chunk_overlap must be >= 0, got {chunk_overlap}")
+    if chunk_overlap >= chunk_size:
+        raise ValueError(
+            f"chunk_overlap ({chunk_overlap}) must be < chunk_size ({chunk_size})"
+        )
+
     if not text or not text.strip():
         return []
 
@@ -52,11 +64,13 @@ def _recursive_split(
     chunk_size: int,
     chunk_overlap: int,
     separators: list[str],
+    _is_top_level: bool = True,
 ) -> list[str]:
     """Recursively split text trying each separator in order.
 
     We try the highest-quality separator first (paragraph break). If the
     resulting pieces are still too large, we recurse with the next separator.
+    Overlap is only applied at the top level to avoid compounding.
     """
     if not text:
         return []
@@ -87,7 +101,10 @@ def _recursive_split(
                 chunks.append(current.strip())
             # If this single piece is too big, split it with the next separator
             if len(piece) > chunk_size and remaining_separators:
-                sub_chunks = _recursive_split(piece, chunk_size, chunk_overlap, remaining_separators)
+                sub_chunks = _recursive_split(
+                    piece, chunk_size, chunk_overlap, remaining_separators,
+                    _is_top_level=False,
+                )
                 chunks.extend(sub_chunks)
                 current = ""
             else:
@@ -96,8 +113,9 @@ def _recursive_split(
     if current.strip():
         chunks.append(current.strip())
 
-    # Apply overlap — prepend the tail of the previous chunk to the next
-    if chunk_overlap > 0 and len(chunks) > 1:
+    # Only apply overlap at the top level so it doesn't compound
+    # through multiple recursion depths
+    if _is_top_level and chunk_overlap > 0 and len(chunks) > 1:
         chunks = _apply_overlap(chunks, chunk_overlap)
 
     return chunks
@@ -110,20 +128,24 @@ def _split_by_characters(text: str, chunk_size: int, chunk_overlap: int) -> list
     while start < len(text):
         end = start + chunk_size
         chunks.append(text[start:end])
+        # Step forward by (chunk_size - overlap) so consecutive chunks share
+        # their tail/head, preserving context at the boundary.
         start += chunk_size - chunk_overlap
     return chunks
 
 
 def _apply_overlap(chunks: list[str], overlap: int) -> list[str]:
-    """Prepend the last `overlap` characters of each chunk to the next chunk."""
+    """Prepend the last `overlap` characters of each chunk to the next chunk.
+
+    Always prepend — the previous implementation skipped overlap when the
+    next chunk coincidentally started with the same characters, which was
+    a bug. Unconditional prepend is correct because the overlap serves as
+    a context bridge regardless of content similarity.
+    """
     result = [chunks[0]]
     for i in range(1, len(chunks)):
         prev_tail = chunks[i - 1][-overlap:]
-        # Only add overlap if the chunk doesn't already start with it
-        if not chunks[i].startswith(prev_tail):
-            result.append(prev_tail + chunks[i])
-        else:
-            result.append(chunks[i])
+        result.append(prev_tail + chunks[i])
     return result
 
 

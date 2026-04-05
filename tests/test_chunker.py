@@ -1,5 +1,7 @@
 """Tests for src/chunker.py — text splitting with overlap."""
 
+import pytest
+
 from src.chunker import chunk_documents, chunk_text
 
 
@@ -85,3 +87,25 @@ def test_chunk_documents_empty_input():
     texts, metas = chunk_documents([])
     assert texts == []
     assert metas == []
+
+
+def test_chunk_text_validates_overlap_gte_chunk_size():
+    """chunk_overlap >= chunk_size should raise ValueError."""
+    with pytest.raises(ValueError, match="chunk_overlap"):
+        chunk_text("hello world", chunk_size=10, chunk_overlap=10)
+
+
+def test_chunk_text_validates_negative_chunk_size():
+    """Negative chunk_size should raise ValueError."""
+    with pytest.raises(ValueError, match="chunk_size"):
+        chunk_text("hello world", chunk_size=-1)
+
+
+def test_chunk_text_overlap_always_applied(sample_text):
+    """Overlap should be applied unconditionally, even with coincidental matches."""
+    overlap = 30
+    result = chunk_text(sample_text, chunk_size=200, chunk_overlap=overlap)
+    if len(result) >= 2:
+        # Second chunk should START with the tail of the first chunk
+        tail = result[0][-overlap:]
+        assert result[1].startswith(tail)

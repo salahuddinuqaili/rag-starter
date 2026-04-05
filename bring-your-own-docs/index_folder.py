@@ -7,6 +7,7 @@ import sys
 # Add project root to path so we can import src/
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+from src.errors import RagStarterError
 from src.pipeline import index_documents
 
 
@@ -54,13 +55,17 @@ def main() -> None:
     print(f"Indexing documents from: {args.folder}")
     print()
 
-    stats = index_documents(
-        folder_path=args.folder,
-        db_path=args.db_path,
-        chunk_size=args.chunk_size,
-        chunk_overlap=args.chunk_overlap,
-        verbose=args.verbose,
-    )
+    try:
+        stats = index_documents(
+            folder_path=args.folder,
+            db_path=args.db_path,
+            chunk_size=args.chunk_size,
+            chunk_overlap=args.chunk_overlap,
+            verbose=args.verbose,
+        )
+    except RagStarterError as e:
+        print(f"Error: {e}")
+        sys.exit(1)
 
     print()
     print(f"Done! Indexed {stats['files_loaded']} files → {stats['chunks_created']} chunks "

@@ -78,6 +78,8 @@ def query_store(
     collection: chromadb.Collection,
     query_embedding: list[float],
     top_k: int = 5,
+    where: dict | None = None,
+    max_distance: float | None = None,
 ) -> list[dict]:
     """Find the most similar chunks to a query embedding.
 
@@ -88,6 +90,12 @@ def query_store(
         collection: The ChromaDB collection to search.
         query_embedding: The embedding vector of the user's question.
         top_k: How many results to return (fewer if the collection is small).
+        where: Optional ChromaDB metadata filter, e.g. {"source": "report.pdf"}.
+            Only chunks matching this filter will be searched.
+        max_distance: Optional relevance threshold (0.0 = identical, 2.0 = opposite).
+            Results with distance above this value are filtered out. For cosine
+            distance, 0.3 is a reasonable threshold — anything above 0.5 is
+            usually irrelevant.
 
     Returns:
         A list of dicts, each with 'content', 'metadata', and 'distance' keys.
@@ -96,22 +104,38 @@ def query_store(
     Example:
         results = query_store(collection, query_vec, top_k=3)
         # results[0]["content"] == "The most relevant chunk text..."
+
+        # Filter by source file:
+        results = query_store(collection, query_vec, where={"source": "report.pdf"})
+
+        # Only return relevant results:
+        results = query_store(collection, query_vec, max_distance=0.4)
     """
     actual_k = min(top_k, collection.count())
     if actual_k == 0:
         return []
 
-    results = collection.query(
-        query_embeddings=[query_embedding],
-        n_results=actual_k,
-    )
+    query_kwargs: dict = {
+        "query_embeddings": [query_embedding],
+        "n_results": actual_k,
+    }
+    if where is not None:
+        query_kwargs["where"] = where
+
+    results = collection.query(**query_kwargs)
 
     output: list[dict] = []
     for i in range(len(results["documents"][0])):
+        distance = results["distances"][0][i]
+
+        # Skip results that are too distant (irrelevant)
+        if max_distance is not None and distance > max_distance:
+            continue
+
         output.append({
             "content": results["documents"][0][i],
             "metadata": results["metadatas"][0][i],
-            "distance": results["distances"][0][i],
+            "distance": distance,
         })
     return output
 

@@ -7,6 +7,7 @@ import sys
 # Add project root to path so we can import src/
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+from src.errors import RagStarterError
 from src.pipeline import query_documents
 from src.store import store_exists
 
@@ -50,6 +51,8 @@ def interactive_mode(db_path: str, top_k: int, model: str, verbose: bool) -> Non
             )
             print_result(result)
 
+        except RagStarterError as e:
+            print(f"\nError: {e}\n")
         except KeyboardInterrupt:
             print("\n\nGoodbye!")
             break
@@ -97,14 +100,18 @@ def main() -> None:
     if args.question is None:
         interactive_mode(args.db_path, args.top_k, args.model, args.verbose)
     else:
-        result = query_documents(
-            question=args.question,
-            db_path=args.db_path,
-            top_k=args.top_k,
-            model=args.model,
-            verbose=args.verbose,
-        )
-        print_result(result)
+        try:
+            result = query_documents(
+                question=args.question,
+                db_path=args.db_path,
+                top_k=args.top_k,
+                model=args.model,
+                verbose=args.verbose,
+            )
+            print_result(result)
+        except RagStarterError as e:
+            print(f"Error: {e}")
+            sys.exit(1)
 
 
 if __name__ == "__main__":

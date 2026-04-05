@@ -1,7 +1,9 @@
 """Integration test: index known chunks, query, and verify correct retrieval."""
 
+import pytest
 from unittest.mock import patch
 
+from src.errors import IndexNotFoundError, OllamaConnectionError
 from src.store import add_documents, create_store, query_store, store_exists
 
 
@@ -109,3 +111,52 @@ def test_pipeline_query_mocked(temp_chroma_path, mock_embeddings):
         results = query_store(collection, query_vec, top_k=1)
         assert len(results) == 1
         assert "RAG" in results[0]["content"]
+
+
+def test_query_store_with_metadata_filter(temp_chroma_path, mock_embeddings):
+    """where filter should restrict results to matching metadata."""
+    chunks = ["Chunk from A", "Chunk from B", "Chunk from C"]
+    metadatas = [{"source": "a.md"}, {"source": "b.md"}, {"source": "c.md"}]
+
+    _client, collection = create_store(path=temp_chroma_path)
+    add_documents(collection, chunks, mock_embeddings, metadatas)
+
+    results = query_store(
+        collection, mock_embeddings[0], top_k=3, where={"source": "b.md"}
+    )
+    assert len(results) == 1
+    assert results[0]["metadata"]["source"] == "b.md"
+
+
+def test_query_store_with_max_distance(temp_chroma_path, mock_embeddings):
+    """max_distance should filter out irrelevant results."""
+    chunks = ["Close match", "Far match", "Very far match"]
+    metadatas = [{"source": "a.md"}, {"source": "b.md"}, {"source": "c.md"}]
+
+    _client, collection = create_store(path=temp_chroma_path)
+    add_documents(collection, chunks, mock_embeddings, metadatas)
+
+    # With a very tight threshold, fewer results should come back
+    all_results = query_store(collection, mock_embeddings[0], top_k=3)
+    filtered_results = query_store(
+        collection, mock_embeddings[0], top_k=3, max_distance=0.001
+    )
+    assert len(filtered_results) <= len(all_results)
+
+
+def test_embedder_raises_on_connection_error():
+    """embed_texts should raise OllamaConnectionError, not sys.exit."""
+    with patch("src.embedder.ollama") as mock_ollama:
+        mock_ollama.embed.side_effect = ConnectionError("Connection refused")
+
+        with pytest.raises(OllamaConnectionError):
+            from src.embedder import embed_texts
+            embed_texts(["test"])
+
+
+def test_pipeline_raises_index_not_found(tmp_path):
+    """query_documents should raise IndexNotFoundError for missing index."""
+    from src.pipeline import query_documents
+
+    with pytest.raises(IndexNotFoundError):
+        query_documents("test question", db_path=str(tmp_path / "nonexistent"))

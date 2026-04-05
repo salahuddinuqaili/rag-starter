@@ -1,5 +1,7 @@
 # Storing and Searching Vectors
 
+[← Back to overview](README.md)
+
 The storing step saves your embeddings (lists of numbers representing meaning)
 in a vector database so you can search through them instantly when a question
 arrives.

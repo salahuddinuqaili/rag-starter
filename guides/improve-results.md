@@ -289,3 +289,10 @@ query.
 - Check `--verbose` output for distance scores. If all distances are high
   (above 1.5), the query may be too different from the document vocabulary.
   Try rephrasing using words that appear in your documents.
+
+## More Resources
+
+- [How RAG Works](../how-it-works/README.md) — understand each pipeline stage
+- [Glossary](../reference/glossary.md) — definitions for terms used in this guide
+- [Troubleshooting](../reference/troubleshooting.md) — fix specific errors
+- [Use a Cloud LLM](use-cloud-llm.md) — swap Ollama for OpenAI or Groq

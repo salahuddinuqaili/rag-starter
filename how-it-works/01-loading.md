@@ -1,5 +1,7 @@
 # Loading Documents
 
+[← Back to overview](README.md)
+
 The loading step reads your files — PDFs, markdown, and plain text — and
 converts each one into a common format that the rest of the pipeline can work
 with.

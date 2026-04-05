@@ -266,3 +266,11 @@ from pathlib import Path
 
 folder = Path("C:/Users/You/My Documents/notes")
 ```
+
+## Still Stuck?
+
+- [Glossary](glossary.md) — definitions for technical terms used above
+- [FAQ](faq.md) — answers to common questions
+- [How RAG Works](../how-it-works/README.md) — understand the pipeline
+- [Improve Your Results](../guides/improve-results.md) — tune chunk size, prompts, and more
+- [Open an issue](https://github.com/salahuddinuqaili/rag-starter/issues/new?template=beginner_question.md) — no question is too basic

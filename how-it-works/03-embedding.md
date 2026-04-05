@@ -1,5 +1,7 @@
 # Embedding Text
 
+[← Back to overview](README.md)
+
 The embedding step converts each chunk of text into a list of numbers (called a
 vector) that captures what the text means, so the pipeline can search by
 meaning instead of by keywords.

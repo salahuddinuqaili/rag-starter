@@ -53,8 +53,10 @@ $ollamaPath = Get-Command ollama -ErrorAction SilentlyContinue
 if (-not $ollamaPath) {
     Write-Host ""
     Write-Host "✗ Ollama not found." -ForegroundColor Red
+    Write-Host ""
+    Write-Host "  Ollama runs AI models locally on your machine." -ForegroundColor Yellow
     Write-Host "  Install it from: https://ollama.ai" -ForegroundColor Yellow
-    Write-Host "  Then re-run this script."
+    Write-Host "  After installing, restart this terminal and re-run this script."
     exit 1
 }
 Write-Host "✓ Ollama found" -ForegroundColor Green
@@ -74,7 +76,12 @@ Write-Host "Running health check..."
 python quickstart\check.py
 
 Write-Host ""
-Write-Host "Setup complete! Try:" -ForegroundColor Green
-Write-Host "  .venv\Scripts\Activate.ps1"
+Write-Host "Setup complete!" -ForegroundColor Green
+Write-Host ""
+Write-Host "Run the demo now:" -ForegroundColor Green
 Write-Host "  python quickstart\my_first_rag.py"
+Write-Host ""
+Write-Host "IMPORTANT: If you close this terminal, reactivate the" -ForegroundColor Yellow
+Write-Host "virtual environment first:" -ForegroundColor Yellow
+Write-Host "  .venv\Scripts\Activate.ps1" -ForegroundColor Yellow
 Write-Host ""

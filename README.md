@@ -5,7 +5,13 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://python.org)
 [![Tests](https://img.shields.io/badge/tests-42%20passing-brightgreen.svg)](tests/)
+[![Status: Work in Progress](https://img.shields.io/badge/status-work%20in%20progress-orange.svg)](#project-status)
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/salahuddinuqaili/rag-starter/blob/main/notebooks/rag_starter_colab.ipynb)
+
+> **Heads up — this project is still being built.** The core pipeline works
+> end-to-end, but several upgrade guides are still stubs and the demo GIF
+> hasn't been recorded yet. See [Project status](#project-status) below for
+> what's done and what's coming.
 
 RAG (Retrieval-Augmented Generation) lets you ask questions about your
 own documents using AI — without uploading anything to the cloud. This
@@ -173,6 +179,30 @@ Once you've got the basics working:
   copy-pasteable fixes
 - [Glossary](reference/glossary.md) — plain-English definitions for
   every technical term
+
+## Project status
+
+This is a v0.1 work in progress. The core is stable and usable today, but
+some surface-level polish and supporting content is still being written.
+
+**Working today:**
+
+- Local RAG pipeline (load → chunk → embed → store → retrieve → generate)
+- Quickstart script, CLI tools, and Streamlit app
+- ChromaDB persistence with metadata filtering and relevance thresholds
+- Streaming answers, configurable prompts, custom error types
+- 42 passing tests, ruff-clean, full type hints
+
+**Still being built:**
+
+- Five upgrade guides under `guides/` are currently stubs:
+  `use-cloud-llm.md`, `use-langchain.md`, `use-llamaindex.md`,
+  `add-docx-support.md`, `migrate-vector-db.md`
+- Demo GIF for the "See it in action" section
+- End-to-end test suite that runs against a real Ollama instance
+  (current tests mock all LLM calls)
+
+If you hit something rough, that's expected — please open an issue.
 
 ## Contributing
 

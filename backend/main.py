@@ -34,6 +34,7 @@ class IndexRequest(BaseModel):
     chunk_size: int = 500
     chunk_overlap: int = 50
     db_path: str = "./chroma_db"
+    embed_model: str = "nomic-embed-text"
 
 
 class QueryRequest(BaseModel):
@@ -43,6 +44,7 @@ class QueryRequest(BaseModel):
     top_k: int = 5
     model: str = "llama3.1:8b"
     db_path: str = "./chroma_db"
+    embed_model: str = "nomic-embed-text"
 
 
 @app.exception_handler(RagStarterError)
@@ -59,16 +61,12 @@ def health() -> dict:
     """Check if Ollama is running and required models are available."""
     import ollama  # Local LLM runner — checked at request time, not import time
 
-    result: dict = {
-        "ollama": False,
-        "models": {"llama3.1:8b": False, "nomic-embed-text": False},
-    }
+    result: dict = {"ollama": False, "models": {}}
     try:
         models_response = ollama.list()
         available = [m.model for m in models_response.models] if models_response.models else []
         result["ollama"] = True
-        for model_name in result["models"]:
-            result["models"][model_name] = any(m.startswith(model_name) for m in available)
+        result["models"] = {m: True for m in available}
     except Exception:
         pass
     return result
@@ -87,6 +85,7 @@ def index(req: IndexRequest) -> dict | JSONResponse:
         db_path=req.db_path,
         chunk_size=req.chunk_size,
         chunk_overlap=req.chunk_overlap,
+        embed_model=req.embed_model,
     )
 
 
@@ -107,7 +106,7 @@ def query(req: QueryRequest) -> StreamingResponse:
     if not store_exists(req.db_path):
         raise IndexNotFoundError(req.db_path)
 
-    query_embedding = embed_query(req.question)
+    query_embedding = embed_query(req.question, model=req.embed_model)
     _client, collection = create_store(path=req.db_path)
     results = query_store(collection, query_embedding, top_k=req.top_k)
 

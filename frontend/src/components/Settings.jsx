@@ -43,6 +43,16 @@ export default function Settings({ settings, setSettings, indexStatus, onClose }
         </div>
 
         <div>
+          <label className="block text-xs font-medium text-gray-600 mb-1">Embedding model</label>
+          <input
+            type="text"
+            value={settings.embedModel}
+            onChange={(e) => update("embedModel", e.target.value)}
+            className="w-full border border-gray-300 rounded-md px-2 py-1.5 text-sm"
+          />
+        </div>
+
+        <div>
           <label className="block text-xs font-medium text-gray-600 mb-1">LLM model</label>
           <input
             type="text"

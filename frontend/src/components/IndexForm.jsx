@@ -17,6 +17,7 @@ export default function IndexForm({ settings, indexStatus, onIndexed }) {
         chunkSize: settings.chunkSize,
         chunkOverlap: settings.chunkOverlap,
         dbPath: settings.dbPath,
+        embedModel: settings.embedModel,
       });
       setStats(result);
       onIndexed(result);

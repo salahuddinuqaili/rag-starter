@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { fetchHealth, fetchIndexStatus } from "./api";
 import ChatView from "./components/ChatView";
 import HealthCheck from "./components/HealthCheck";
@@ -10,8 +10,14 @@ const DEFAULT_SETTINGS = {
   chunkOverlap: 50,
   topK: 5,
   model: "llama3.1:8b",
+  embedModel: "nomic-embed-text",
   dbPath: "./chroma_db",
 };
+
+function hasModel(health, modelName) {
+  if (!health?.models) return false;
+  return Object.keys(health.models).some((m) => m.startsWith(modelName));
+}
 
 export default function App() {
   const [health, setHealth] = useState(null);
@@ -19,12 +25,11 @@ export default function App() {
   const [settings, setSettings] = useState(DEFAULT_SETTINGS);
   const [messages, setMessages] = useState([]);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const healthyRef = useRef(false);
 
   const allChecksPass =
     health?.ollama &&
-    health?.models?.["llama3.1:8b"] &&
-    health?.models?.["nomic-embed-text"];
+    hasModel(health, settings.model) &&
+    hasModel(health, settings.embedModel);
 
   const refreshStatus = useCallback(async () => {
     try {
@@ -34,10 +39,8 @@ export default function App() {
       ]);
       setHealth(h);
       setIndexStatus(s);
-      healthyRef.current =
-        h.ollama && h.models["llama3.1:8b"] && h.models["nomic-embed-text"];
     } catch {
-      setHealth({ ollama: false, models: { "llama3.1:8b": false, "nomic-embed-text": false } });
+      setHealth({ ollama: false, models: {} });
       setIndexStatus({ indexed: false, chunk_count: 0 });
     }
   }, [settings.dbPath]);
@@ -53,12 +56,10 @@ export default function App() {
     [],
   );
 
-  // Determine which step to highlight
   const step = !allChecksPass ? "setup" : !indexStatus?.indexed ? "index" : "chat";
 
   return (
     <div className="min-h-screen flex flex-col">
-      {/* Header */}
       <header className="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between shrink-0">
         <h1 className="text-lg font-semibold tracking-tight">rag-starter</h1>
         <button
@@ -70,13 +71,10 @@ export default function App() {
       </header>
 
       <div className="flex flex-1 overflow-hidden">
-        {/* Main content */}
         <main className="flex-1 overflow-y-auto">
           <div className="max-w-2xl mx-auto px-6 py-8 space-y-6">
-            {/* Step 1: Health checks */}
-            <HealthCheck health={health} onRefresh={refreshStatus} />
+            <HealthCheck health={health} settings={settings} onRefresh={refreshStatus} />
 
-            {/* Step 2: Index (visible once checks pass) */}
             {allChecksPass && (
               <IndexForm
                 settings={settings}
@@ -85,7 +83,6 @@ export default function App() {
               />
             )}
 
-            {/* Step 3: Chat (visible once indexed) */}
             {allChecksPass && indexStatus?.indexed && (
               <ChatView
                 settings={settings}
@@ -94,7 +91,6 @@ export default function App() {
               />
             )}
 
-            {/* Collapsed state indicator when everything is ready */}
             {step === "chat" && messages.length === 0 && (
               <p className="text-center text-gray-400 text-sm pt-4">
                 Everything is set up. Ask your first question below.
@@ -103,7 +99,6 @@ export default function App() {
           </div>
         </main>
 
-        {/* Sidebar */}
         {sidebarOpen && (
           <Settings
             settings={settings}

@@ -33,6 +33,7 @@ export default function ChatView({ settings, messages, setMessages }) {
         topK: settings.topK,
         model: settings.model,
         dbPath: settings.dbPath,
+        embedModel: settings.embedModel,
       });
 
       for await (const { event, data } of stream) {

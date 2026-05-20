@@ -11,7 +11,7 @@ export async function fetchIndexStatus(dbPath = "./chroma_db") {
   return res.json();
 }
 
-export async function postIndex({ folderPath, chunkSize, chunkOverlap, dbPath }) {
+export async function postIndex({ folderPath, chunkSize, chunkOverlap, dbPath, embedModel }) {
   const res = await fetch(`${BASE}/api/index`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -20,6 +20,7 @@ export async function postIndex({ folderPath, chunkSize, chunkOverlap, dbPath })
       chunk_size: chunkSize,
       chunk_overlap: chunkOverlap,
       db_path: dbPath,
+      embed_model: embedModel,
     }),
   });
   if (!res.ok) {
@@ -33,7 +34,7 @@ export async function postIndex({ folderPath, chunkSize, chunkOverlap, dbPath })
  * POST-based SSE stream for /api/query.
  * Yields { event, data } objects as they arrive.
  */
-export async function* streamQuery({ question, topK, model, dbPath }) {
+export async function* streamQuery({ question, topK, model, dbPath, embedModel }) {
   const res = await fetch(`${BASE}/api/query`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -42,6 +43,7 @@ export async function* streamQuery({ question, topK, model, dbPath }) {
       top_k: topK,
       model,
       db_path: dbPath,
+      embed_model: embedModel,
     }),
   });
 

@@ -1,29 +1,28 @@
-const CHECK_ITEMS = [
-  { key: "ollama", label: "Ollama is running", fix: "Start it with: ollama serve" },
-  {
-    key: "llama3.1:8b",
-    label: "LLM model (llama3.1:8b)",
-    fix: "Pull it with: ollama pull llama3.1:8b",
-    isModel: true,
-  },
-  {
-    key: "nomic-embed-text",
-    label: "Embedding model (nomic-embed-text)",
-    fix: "Pull it with: ollama pull nomic-embed-text",
-    isModel: true,
-  },
-];
-
-function getStatus(health, item) {
-  if (!health) return null;
-  if (item.isModel) return health.models?.[item.key] ?? false;
-  return health[item.key] ?? false;
+function hasModel(health, modelName) {
+  if (!health?.models) return false;
+  return Object.keys(health.models).some((m) => m.startsWith(modelName));
 }
 
-export default function HealthCheck({ health, onRefresh }) {
-  const allPass = health?.ollama
-    && health?.models?.["llama3.1:8b"]
-    && health?.models?.["nomic-embed-text"];
+export default function HealthCheck({ health, settings, onRefresh }) {
+  const ollamaOk = health?.ollama ?? false;
+  const llmOk = ollamaOk && hasModel(health, settings.model);
+  const embedOk = ollamaOk && hasModel(health, settings.embedModel);
+
+  const items = [
+    { ok: ollamaOk, label: "Ollama is running", fix: "Start it with: ollama serve" },
+    {
+      ok: llmOk,
+      label: `LLM model (${settings.model})`,
+      fix: `Pull it with: ollama pull ${settings.model}`,
+    },
+    {
+      ok: embedOk,
+      label: `Embedding model (${settings.embedModel})`,
+      fix: `Pull it with: ollama pull ${settings.embedModel}`,
+    },
+  ];
+
+  const allPass = ollamaOk && llmOk && embedOk;
 
   return (
     <section className="rounded-lg border border-gray-200 bg-white p-5">
@@ -40,23 +39,22 @@ export default function HealthCheck({ health, onRefresh }) {
       </div>
 
       <ul className="space-y-2">
-        {CHECK_ITEMS.map((item) => {
-          const status = getStatus(health, item);
-          const loading = status === null;
+        {items.map((item) => {
+          const loading = health === null;
           return (
-            <li key={item.key} className="flex items-start gap-2 text-sm">
+            <li key={item.label} className="flex items-start gap-2 text-sm">
               <span className="mt-0.5 shrink-0">
                 {loading ? (
                   <span className="text-gray-400">...</span>
-                ) : status ? (
+                ) : item.ok ? (
                   <span className="text-green-600">&#10003;</span>
                 ) : (
                   <span className="text-red-500">&#10007;</span>
                 )}
               </span>
               <div>
-                <span className={status === false ? "text-red-700" : ""}>{item.label}</span>
-                {status === false && (
+                <span className={!loading && !item.ok ? "text-red-700" : ""}>{item.label}</span>
+                {!loading && !item.ok && (
                   <p className="text-gray-500 mt-0.5">
                     <code className="bg-gray-100 px-1.5 py-0.5 rounded text-xs">{item.fix}</code>
                   </p>

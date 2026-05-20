@@ -19,6 +19,7 @@ def index_documents(
     chunk_size: int = 500,
     chunk_overlap: int = 50,
     verbose: bool = False,
+    embed_model: str = "nomic-embed-text",
 ) -> dict:
     """Load, chunk, embed, and store documents from a folder.
 
@@ -31,6 +32,7 @@ def index_documents(
         chunk_size: Maximum characters per chunk (default 500).
         chunk_overlap: Characters of overlap between chunks (default 50).
         verbose: When True, print what each stage is doing and how long it took.
+        embed_model: The Ollama embedding model to use (default nomic-embed-text).
 
     Returns:
         A dict with stats: files_loaded, chunks_created, time_seconds.
@@ -59,7 +61,7 @@ def index_documents(
 
     # Stage 3: Generate embeddings
     stage_start = time.time()
-    embeddings = embed_texts(chunk_texts)
+    embeddings = embed_texts(chunk_texts, model=embed_model)
     if verbose:
         print(f"[embedder] Embedded {len(chunk_texts)} chunks in {time.time() - stage_start:.1f}s")
 
@@ -90,6 +92,7 @@ def query_documents(
     prompt_template: str | None = None,
     where: dict | None = None,
     max_distance: float | None = None,
+    embed_model: str = "nomic-embed-text",
 ) -> dict:
     """Retrieve relevant chunks and generate an answer to a question.
 
@@ -107,6 +110,7 @@ def query_documents(
         where: Optional metadata filter, e.g. {"source": "report.pdf"}.
         max_distance: Optional relevance threshold. Results with distance above
             this value are filtered out. Try 0.4 for strict relevance.
+        embed_model: The Ollama embedding model to use (default nomic-embed-text).
 
     Returns:
         A dict with 'answer' (str) and 'sources' (list of dicts with
@@ -127,7 +131,7 @@ def query_documents(
 
     # Stage 1: Embed the question
     stage_start = time.time()
-    query_embedding = embed_query(question)
+    query_embedding = embed_query(question, model=embed_model)
     if verbose:
         print(f"[embedder] Embedded query in {time.time() - stage_start:.1f}s")
 

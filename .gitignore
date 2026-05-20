@@ -25,6 +25,14 @@ indexed_data/
 # Ruff
 .ruff_cache/
 
+# Node / Frontend
+node_modules/
+frontend/dist/
+
+# uv
+.python-version
+uv.lock
+
 # OS
 .DS_Store
 Thumbs.db

@@ -16,6 +16,10 @@ venv/
 # ChromaDB data
 chroma_db/
 
+# SQLite + uploads
+rag_starter.db
+uploads/
+
 # Indexed data
 indexed_data/
 

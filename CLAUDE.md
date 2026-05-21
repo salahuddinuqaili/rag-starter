@@ -3,16 +3,16 @@
 ## Project
 
 **rag-starter** — Local-first RAG pipeline for non-engineers (PMs, analysts, students).
-One shared Python library (`src/`) consumed by three interfaces: quickstart scripts,
-CLI tools, and a Streamlit app. MIT licensed.
+A shared Python library (`src/`) with a FastAPI + React web app, CLI tools, and
+quickstart scripts. MIT licensed.
 
-Read the code for architecture details — `src/pipeline.py` is the orchestrator and
-only entry point that scripts should import.
+`src/pipeline.py` is the RAG orchestrator. `backend/main.py` is the FastAPI app.
+`frontend/` is React 19 + Vite + Tailwind v4.
 
-## Guardrails — v0.1
+## Guardrails
 
-Do NOT introduce: LangChain, LlamaIndex, Docker, Node.js/TypeScript, multi-modal,
-reranking, agentic RAG, any database server, any cloud-only dependency.
+Do NOT introduce: LangChain, LlamaIndex, Docker, multi-modal (images), reranking,
+agentic RAG, any database server, any cloud-only dependency.
 
 ## Code Rules
 
@@ -23,24 +23,27 @@ reranking, agentic RAG, any database server, any cloud-only dependency.
 - **Type hints everywhere.** Full annotations on every function signature.
 - **Docstrings on every function.** Plain English, no jargon without parenthetical
   explanation (e.g. "embedding" needs "(a list of numbers that captures meaning)").
-- **Imports:** stdlib, then third-party, then local (`src.`). One blank line between groups.
-- **Error handling:** `src/` raises custom exceptions from `src/errors.py`. CLI scripts
-  catch `RagStarterError` at the boundary with `sys.exit(1)`. Never `sys.exit()` in `src/`.
+- **Imports:** stdlib, then third-party, then local (`src.` / `backend.`). One blank
+  line between groups.
+- **Error handling:** `src/` raises custom exceptions from `src/errors.py`. Backend
+  catches `RagStarterError` via FastAPI exception handler. Never `sys.exit()` in `src/`.
 - **No print() in src/.** Use `logging`. Exception: `pipeline.py` verbose timing.
-- **Verbose flag:** Every CLI script and `pipeline.py` supports `--verbose` / `verbose=True`.
 
 ### Dependencies
 
-- Runtime deps: `quickstart/requirements.txt`. Dev deps: `requirements-dev.txt` (root).
+- Python deps managed by **uv** via `pyproject.toml` at root. Dev deps in
+  `[dependency-groups]`. `quickstart/requirements.txt` kept as secondary install path.
 - Pin major ranges only: `chromadb>=0.5,<1.0` not `chromadb==0.5.23`.
+- Frontend deps: `frontend/package.json` (npm).
 - Document why at the import site when adding a new dependency.
 
 ### Configuration
 
-- Defaults hardcoded in function signatures. No config files in v0.1.
-- Overridable via CLI flags and function parameters.
+- Defaults hardcoded in function signatures. No config files.
+- Overridable via API parameters, CLI flags, and frontend Settings panel.
 - Cloud LLM: `OPENAI_API_KEY` env var enables OpenAI code path. Ollama is default.
-- ChromaDB path defaults to `./chroma_db/`.
+- Embedding model configurable via `embed_model` param (default nomic-embed-text).
+- Data: ChromaDB at `./chroma_db/`, SQLite at `./rag_starter.db`, uploads at `./uploads/`.
 
 ## Writing Rules (Markdown)
 
@@ -63,36 +66,28 @@ reranking, agentic RAG, any database server, any cloud-only dependency.
 
 - Conventional commits: `feat:`, `fix:`, `docs:`, `refactor:`. Imperative mood, <72 chars.
 - Branch naming: `feat/short-description`, `fix/short-description`.
-- No generated files committed (chroma_db/, __pycache__, notebook outputs).
+- No generated files committed (chroma_db/, __pycache__, node_modules/, rag_starter.db).
 - Architecture decisions go in DECISIONS.md (Claude projects directory, not the repo).
 
 ## Common Commands
 
 ```bash
 # Setup
-pip install -r quickstart/requirements.txt
-pip install -r requirements-dev.txt
+uv sync --dev
 ollama pull llama3.1:8b && ollama pull nomic-embed-text
+cd frontend && npm install
 
-# Run
-python quickstart/check.py
+# Run (two terminals)
+uv run uvicorn backend.main:app --reload --port 8000
+cd frontend && npm run dev    # opens http://localhost:5173
+
+# Legacy CLI
 python quickstart/my_first_rag.py --verbose
 python bring-your-own-docs/index_folder.py ~/my-docs --verbose
 python bring-your-own-docs/query.py "your question" --verbose
-streamlit run bring-your-own-docs/app.py
 
 # Test & lint
-pytest tests/ -v
-ruff check .
-ruff format .
+uv run python -m pytest tests/ -v
+uv run ruff check .
+uv run ruff format .
 ```
-
-## v0.2 Plan
-
-Queued upgrade — start in a new session on branch `feat/v0.2-web-app`:
-
-- Replace Streamlit with **FastAPI + React 19 + Vite + Tailwind v4** (SSE streaming)
-- Add multi-collection support, chat history, document management UI
-- Migrate to **uv** (pip is broken on this machine)
-- `src/` RAG library stays unchanged — upgrade is interface layer only
-- Keep core philosophy: no LangChain, no heavy frameworks, direct Ollama calls

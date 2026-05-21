@@ -5,13 +5,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://python.org)
 [![Tests](https://img.shields.io/badge/tests-42%20passing-brightgreen.svg)](tests/)
-[![Status: Work in Progress](https://img.shields.io/badge/status-work%20in%20progress-orange.svg)](#project-status)
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/salahuddinuqaili/rag-starter/blob/main/notebooks/rag_starter_colab.ipynb)
-
-> **Heads up — this project is still being built.** The core pipeline works
-> end-to-end, but several upgrade guides are still stubs and the demo GIF
-> hasn't been recorded yet. See [Project status](#project-status) below for
-> what's done and what's coming.
 
 RAG (Retrieval-Augmented Generation) lets you ask questions about your
 own documents using AI — without uploading anything to the cloud. This
@@ -20,6 +14,7 @@ repo gives you a working pipeline with no frameworks to learn.
 - **Local-first** — your documents never leave your machine
 - **Zero cost** — runs on Ollama, no API keys required
 - **No frameworks** — plain Python you can read, modify, and learn from
+- **Web app included** — FastAPI + React UI with drag-and-drop upload
 
 ## Who is this for?
 
@@ -28,31 +23,6 @@ repo gives you a working pipeline with no frameworks to learn.
 - You're a PM, analyst, student, or developer learning RAG for the
   first time
 - You want to understand how RAG works, not just use a black box
-
-## See it in action
-
-<!-- TODO: Replace with actual demo GIF once recorded -->
-```
-$ python quickstart/my_first_rag.py
-
-============================================================
-  rag-starter: Your First RAG Pipeline
-============================================================
-
-Step 1: Indexing sample documents...
-Indexed 6 files → 42 chunks in 3.2s
-
-Step 2: Asking questions across your documents...
-
-------------------------------------------------------------
-Question: What are the best practices for async communication in remote teams?
-
-Answer: Teams should default to async methods like written updates and shared
-documents rather than scheduling meetings. When meetings are necessary, always
-circulate an agenda beforehand and share notes within 24 hours.
-
-Sources: remote-work-best-practices.md
-```
 
 ## Quickstart
 
@@ -67,13 +37,35 @@ free API (no credit card needed). No local setup required.
 
 #### Prerequisites
 
-- **Python 3.10+** — [download here](https://python.org) if you don't
-  have it
+- **Python 3.10+** — [download here](https://python.org)
 - **Ollama** — [download here](https://ollama.ai) (free, runs AI models
-  locally on your machine). Install this first — the setup script needs
-  it.
+  locally)
+- **Node.js 18+** — [download here](https://nodejs.org) (for the web UI)
 
-#### Install and run
+#### Option A: Web app (recommended)
+
+```bash
+git clone https://github.com/salahuddinuqaili/rag-starter.git
+cd rag-starter
+
+# Install
+pip install uv               # if you don't have uv yet
+uv sync
+cd frontend && npm install && cd ..
+
+# Pull AI models (~5 GB first time)
+ollama pull llama3.1:8b
+ollama pull nomic-embed-text
+
+# Start (two terminals)
+uv run uvicorn backend.main:app --reload --port 8000
+cd frontend && npm run dev
+```
+
+Open [http://localhost:5173](http://localhost:5173). The app walks you
+through setup, indexing, and your first question.
+
+#### Option B: CLI quickstart
 
 ```bash
 git clone https://github.com/salahuddinuqaili/rag-starter.git
@@ -89,22 +81,10 @@ bash quickstart/install.sh
 python quickstart/my_first_rag.py
 ```
 
-The install script creates a virtual environment, installs dependencies,
-and pulls the required AI models (~5 GB on first run). First-time setup
-takes about 10-15 minutes depending on your internet speed.
-
-> **Windows note:** If you close your terminal, reactivate the virtual
-> environment before running commands: `.venv\Scripts\Activate.ps1`
-
 #### Already have an OpenAI key?
 
 ```bash
-# macOS / Linux
-export OPENAI_API_KEY=your-key-here
-
-# Windows (PowerShell)
-$env:OPENAI_API_KEY="your-key-here"
-
+export OPENAI_API_KEY=your-key-here    # or $env:OPENAI_API_KEY on Windows
 python quickstart/my_first_rag.py
 ```
 
@@ -112,36 +92,29 @@ See [guides/use-cloud-llm.md](guides/use-cloud-llm.md) for details.
 
 ## Use it on YOUR documents
 
-### Step 1: Index your files
+### Web app
+
+Open the web UI and:
+
+1. **Upload files** — drag and drop PDFs, Markdown, or text files
+2. **Ask questions** — answers stream in with source citations
+3. **Manage collections** — organize documents into separate collections
+4. **Browse history** — past conversations persist in the sidebar
+
+### CLI
 
 ```bash
-# macOS / Linux
+# Index your files
 python bring-your-own-docs/index_folder.py ./my-documents --verbose
 
-# Windows — quote paths with spaces
-python bring-your-own-docs/index_folder.py "C:\Users\You\Documents\My PDFs" --verbose
-```
-
-Supports PDF, Markdown, and plain text. Your files are processed locally
-and stored in a ChromaDB database at `./chroma_db/`.
-
-### Step 2: Ask questions
-
-```bash
+# Ask questions
 python bring-your-own-docs/query.py "What does the Q3 report say about revenue?"
-```
 
-Or start an interactive session:
-
-```bash
+# Interactive mode
 python bring-your-own-docs/query.py
 ```
 
-Or launch the web UI:
-
-```bash
-streamlit run bring-your-own-docs/app.py
-```
+Supports PDF, Markdown, and plain text.
 
 ## How does it work?
 
@@ -154,12 +127,26 @@ Read the full walkthrough in [how-it-works/](how-it-works/README.md) —
 plain English, no jargon. Check the [Glossary](reference/glossary.md)
 for any unfamiliar terms.
 
+## Architecture
+
+```
+src/               ← Shared RAG library (untouched between CLI and web app)
+backend/           ← FastAPI API server (SSE streaming, file upload)
+frontend/          ← React 19 + Vite + Tailwind v4
+quickstart/        ← First-run scripts and health check
+bring-your-own-docs/ ← CLI tools (index, query, legacy Streamlit app)
+```
+
+The web app stores data in three places: ChromaDB for vectors
+(`./chroma_db/`), SQLite for conversations and collections
+(`./rag_starter.db`), and a file system folder for uploads (`./uploads/`).
+
 ## Ready for more?
 
 Once you've got the basics working:
 
 - [Improve your results](guides/improve-results.md) — tune chunk size,
-  prompts, and retrieval with copy-pasteable experiments
+  prompts, and retrieval
 - [Use a cloud LLM](guides/use-cloud-llm.md) — swap Ollama for OpenAI
   or Groq
 - [Use LangChain](guides/use-langchain.md) — rebuild the pipeline with
@@ -179,30 +166,6 @@ Once you've got the basics working:
   copy-pasteable fixes
 - [Glossary](reference/glossary.md) — plain-English definitions for
   every technical term
-
-## Project status
-
-This is a v0.1 work in progress. The core is stable and usable today, but
-some surface-level polish and supporting content is still being written.
-
-**Working today:**
-
-- Local RAG pipeline (load → chunk → embed → store → retrieve → generate)
-- Quickstart script, CLI tools, and Streamlit app
-- ChromaDB persistence with metadata filtering and relevance thresholds
-- Streaming answers, configurable prompts, custom error types
-- 42 passing tests, ruff-clean, full type hints
-
-**Still being built:**
-
-- Five upgrade guides under `guides/` are currently stubs:
-  `use-cloud-llm.md`, `use-langchain.md`, `use-llamaindex.md`,
-  `add-docx-support.md`, `migrate-vector-db.md`
-- Demo GIF for the "See it in action" section
-- End-to-end test suite that runs against a real Ollama instance
-  (current tests mock all LLM calls)
-
-If you hit something rough, that's expected — please open an issue.
 
 ## Contributing
 

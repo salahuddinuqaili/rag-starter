@@ -1,7 +1,8 @@
 """Integration test: index known chunks, query, and verify correct retrieval."""
 
-import pytest
 from unittest.mock import patch
+
+import pytest
 
 from src.errors import IndexNotFoundError, OllamaConnectionError
 from src.store import add_documents, create_store, query_store, store_exists

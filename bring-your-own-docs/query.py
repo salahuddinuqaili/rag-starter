@@ -94,7 +94,10 @@ def main() -> None:
 
     if not store_exists(args.db_path):
         print("No index found. Run index_folder.py first:")
-        print(f"  python bring-your-own-docs/index_folder.py /path/to/docs --db-path {args.db_path}")
+        print(
+            "  python bring-your-own-docs/index_folder.py /path/to/docs "
+            f"--db-path {args.db_path}"
+        )
         sys.exit(1)
 
     if args.question is None:

@@ -26,5 +26,11 @@ target-version = "py310"
 [tool.ruff.lint]
 select = ["E", "F", "I"]
 
+[tool.ruff.lint.per-file-ignores]
+# Reflowing the prompt template would change the text sent to the model.
+"src/generator.py" = ["E501"]
+# Notebook prose and URLs are read rendered, not in a 100-column source view.
+"notebooks/*.ipynb" = ["E501"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]

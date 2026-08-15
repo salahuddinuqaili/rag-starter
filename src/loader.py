@@ -145,6 +145,11 @@ def load_folder(folder_path: str, verbose: bool = False) -> list[Document]:
     elapsed = time.time() - start
     if verbose:
         parts = [f"{v} {k}" for k, v in counts.items()]
-        logger.info("[loader] Loaded %d documents (%s) in %.1fs", len(documents), ", ".join(parts), elapsed)
+        logger.info(
+            "[loader] Loaded %d documents (%s) in %.1fs",
+            len(documents),
+            ", ".join(parts),
+            elapsed,
+        )
 
     return documents

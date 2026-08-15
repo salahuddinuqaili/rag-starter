@@ -4,7 +4,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://python.org)
-[![Tests](https://img.shields.io/badge/tests-42%20passing-brightgreen.svg)](tests/)
+[![CI](https://github.com/salahuddinuqaili/rag-starter/actions/workflows/ci.yml/badge.svg)](https://github.com/salahuddinuqaili/rag-starter/actions/workflows/ci.yml)
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/salahuddinuqaili/rag-starter/blob/main/notebooks/rag_starter_colab.ipynb)
 
 RAG (Retrieval-Augmented Generation) lets you ask questions about your

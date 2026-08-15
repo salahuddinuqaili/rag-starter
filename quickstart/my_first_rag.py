@@ -11,7 +11,6 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from src.pipeline import index_documents, query_documents
 
-
 SAMPLE_QUESTIONS = [
     "What are the best practices for async communication in remote teams?",
     "How does supervised learning differ from unsupervised learning?",
